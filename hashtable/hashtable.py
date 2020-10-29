@@ -1,3 +1,4 @@
+from linked_list import LinkedList
 class HashTableEntry:
     """
     Linked List hash table key/value pair
