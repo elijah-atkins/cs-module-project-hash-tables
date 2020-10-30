@@ -22,7 +22,7 @@ class HashTable:
     """
 
     def __init__(self, capacity = MIN_CAPACITY):
-        self.storage = [LinkedList()] * MIN_CAPACITY
+        self.table = [LinkedList()] * MIN_CAPACITY
         self.count = 0
         self.capacity = capacity
 
@@ -85,7 +85,7 @@ class HashTable:
     def hash_index(self, key):
         """
         Take an arbitrary key and return a valid integer index
-        between within the storage capacity of the hash table.
+        between within the table capacity of the hash table.
         """
         #return self.fnv1(key) % self.capacity
         return self.djb2(key) % self.capacity
@@ -98,16 +98,18 @@ class HashTable:
 
         Implement this.
         """
+
         slot = self.hash_index(key)
-        current = self.storage[slot].head
+        current = self.table[slot].head
         while current:
             if current.key == key:
                 current.value = value
             current = current.next
         
         entry = HashTableEntry(key, value)
-        self.storage[slot].insert_at_head(entry)
+        self.table[slot].insert_at_head(entry)
         self.count += 1
+
 
 
     def delete(self, key):
@@ -118,9 +120,15 @@ class HashTable:
 
         Implement this.
         """
-        # Your code here
+
         self.put(key, None)
         self.count -= 1
+
+        # Your code here
+        # value = self.table[self.hash_index(key)]
+        # if value == None:
+        #     print('value is already None')
+        # self.table[self.hash_index(key)] = None
 
     def get(self, key):
         """
@@ -132,7 +140,7 @@ class HashTable:
         """
         # Your code here
         slot = self.hash_index(key)
-        current = self.storage[slot].head
+        current = self.table[slot].head
         while current:
             if current.key == key:
                 return current.value
@@ -148,9 +156,9 @@ class HashTable:
         """
         # Your code here
         if self.get_load_factor() > 0.7:
-            old_storage = self.storage
-            self.storage = [LinkedList()] * new_capacity
-            for item in old_storage:
+            old_table = self.table
+            self.table = [LinkedList()] * new_capacity
+            for item in old_table:
                 current = item.head
                 while current:
                     self.put(current.key, current.value)
