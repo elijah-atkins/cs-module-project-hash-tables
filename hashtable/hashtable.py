@@ -100,7 +100,7 @@ class HashTable:
         """
 
         slot = self.hash_index(key)
-        current = self.table[slot].head
+        current = self.table[slot]
         while current:
             if current.key == key:
                 current.value = value
