@@ -60,28 +60,35 @@ class HashTable:
         # Your code here
         return self.count / self.capacity
 
-
     def fnv1(self, key):
         """
         FNV-1 Hash, 64-bit
         Implement this, and/or DJB2.
         """
 
-        # Your code here
+        seed = 0
+        #64 bit FNV_prime = 240 + 28 + 0xb3 = 1099511628211
+        FNV_prime = 1099511628211
+        #64 bit offset basis
+        offset_basis = 14695981039346656037
 
+        # FNV hash algorithm
+        hash = offset_basis + seed
+        for char in key:
+            hash = hash * FNV_prime
+            hash = hash ^ ord(char)
+        return hash
 
     def djb2(self, key):
         """
         DJB2 hash, 32-bit
         Implement this, and/or FNV-1.
         """
-        # Your code here
-        str_key = str(key).encode()
-        hash_value = 5381
-        for s in str_key:
-            hash_value = ((hash_value << 5) + hash_value) + s
-
-        return (hash_value & 0xffffffff)
+        # djb2 hash 
+        hash = 5381
+        for char in key:
+            hash = ((hash << 5) + hash) + ord(char)
+        return hash & 0xffffffff
 
 
     def hash_index(self, key):
@@ -98,7 +105,7 @@ class HashTable:
         Hash collisions should be handled with Linked List Chaining.
         Implement this.
         """
-        # Your code here
+
         if self.get_load_factor() > 0.7:
             self.resize(self.capacity * 2)
 
