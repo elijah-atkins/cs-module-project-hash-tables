@@ -1,27 +1,22 @@
+from linked_list import LinkedList
+from linked_list import Node
+
+
 class HashTableEntry:
     """
     Linked List hash table key/value pair
     """
+
     def __init__(self, key, value):
         self.key = key
         self.value = value
         self.next = None
 
-    #functions to manage linked list
-    def get_value(self):
-        return self.value
+    def __eq__(self, other):
+        if isinstance(other, HashTableEntry):
+            return self.key == other.key
+        return False
 
-    def get_key(self):
-        return self.key
-
-    def get_next(self):
-        return self.next
-
-    def set_next(self, entry):
-        self.next = entry
-
-    def set_value(self, value):
-        self.value = value
 
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
@@ -34,12 +29,11 @@ class HashTable:
     Implement this.
     """
 
-    def __init__(self, capacity):
+    def __init__(self, capacity = MIN_CAPACITY):
         # Your code here
         self.capacity = capacity
         self.table = [None] * capacity
-        self.count = 0
-
+        self.num_elements = 0
 
     def get_num_slots(self):
         """
@@ -49,17 +43,18 @@ class HashTable:
         One of the tests relies on this.
         Implement this.
         """
-        # Your code here
-        return len(self.table)
 
+        return self.capacity
 
     def get_load_factor(self):
         """
         Return the load factor for this hash table.
         Implement this.
         """
-        # Your code here
-        return self.count / self.capacity
+        if self.num_elements != 0:
+            return  self.num_elements /self.capacity 
+        else:
+            return 0
 
     def fnv1(self, key):
         """
@@ -68,9 +63,9 @@ class HashTable:
         """
 
         seed = 0
-        #64 bit FNV_prime = 240 + 28 + 0xb3 = 1099511628211
+        # 64 bit FNV_prime = 240 + 28 + 0xb3 = 1099511628211
         FNV_prime = 1099511628211
-        #64 bit offset basis
+        # 64 bit offset basis
         offset_basis = 14695981039346656037
 
         # FNV hash algorithm
@@ -85,19 +80,18 @@ class HashTable:
         DJB2 hash, 32-bit
         Implement this, and/or FNV-1.
         """
-        # djb2 hash 
+        # djb2 hash
         hash = 5381
         for char in key:
             hash = ((hash << 5) + hash) + ord(char)
         return hash & 0xffffffff
-
 
     def hash_index(self, key):
         """
         Take an arbitrary key and return a valid integer index
         between within the storage capacity of the hash table.
         """
-        #return self.fnv1(key) % self.capacity
+        # return self.fnv1(key) % self.capacity
         return self.djb2(key) % self.capacity
 
     def put(self, key, value):
@@ -106,34 +100,21 @@ class HashTable:
         Hash collisions should be handled with Linked List Chaining.
         Implement this.
         """
-        #Double capacity if load factor is over 0.7
-        if self.get_load_factor() > 0.7:
-            self.resize(self.capacity * 2)
 
-        #generate hash index based on key
-        index = self.hash_index(key)
-        #load key and value into a HashTableEntry
-        table_entry = HashTableEntry(key, value)
-        self.count += 1
-        #if nothing is in the table index load the HashTableEntry generated from incoming key, value
-        if self.table[index] == None:
-            self.table[index] = table_entry
-        #if table already has entry
+        hash_index = self.hash_index(key)
+        if self.table[hash_index] != None:
+            linked_list = self.table[hash_index]
+            did_add_new_node = linked_list.insert_at_head_or_overwrite(
+                Node(HashTableEntry(key, value)))
+            if did_add_new_node:
+                self.num_elements += 1
         else:
-            #extrct current node in table at occupied index
-            current_node = self.table[index]
-            #walk through slots in list at table[index]
-            while current_node != None:
-                #check key, if we're editing a node that already exist update the value
-                if current_node.get_key() == key:
-                    current_node.set_value(value)
-                #if the next slot is empty
-                elif current_node.get_next() == None:
-                    #load the HashTableEntry generated from incoming key into the next slot
-                    current_node.set_next(table_entry)
-                #walk to next node
-                current_node = current_node.get_next()
-        return value
+            linked_list = LinkedList()
+            linked_list.insert_at_head(Node(HashTableEntry(key, value)))
+            self.table[hash_index] = linked_list
+            self.num_elements += 1
+        if self.get_load_factor() > 0.7:
+            self.resize(self.get_num_slots() * 2)
 
     def delete(self, key):
         """
@@ -141,60 +122,58 @@ class HashTable:
         Print a warning if the key is not found.
         Implement this.
         """
+        hash_index = self.hash_index(key)
+        if self.table[hash_index] != None:
+            linked_list = self.table[hash_index]
+            did_delete_node = linked_list.delete(HashTableEntry(key, None))
+            if did_delete_node != None:
+                self.num_elements -= 1
 
-        index = self.hash_index(key)
-        current_node = self.table[index]
-        prev_node = None
-        while current_node != None:
-            if current_node.get_key() == key:
-                self.count -= 1
-                if prev_node == None:
-                    current_node.set_value(None)
-                else:
-                    prev_node.set_next(current_node.get_next())
+                if self.get_load_factor() < 0.2:
+                    if self.capacity > 8:
+                        self.resize(int(self.get_num_slots() / 2))
 
-            prev_node = current_node
-            current_node = current_node.get_next()
+        else:
+            print("Warning: node not found")
 
-        if self.get_load_factor() < 0.2:
-            new_capacity = self.capacity // 2
-            if new_capacity < MIN_CAPACITY:
-                self.resize(MIN_CAPACITY)
-            else:
-                self.resize(new_capacity)
 
     def get(self, key):
-        """
-        Retrieve the value stored with the given key.
-        Returns None if the key is not found.
-        Implement this.
-        """
-        # Your code here
-        index = self.hash_index(key)
-        current_node = self.table[index]
-        while current_node != None:
-            if current_node.get_key() == key:
-                return current_node.get_value()
-            current_node = current_node.get_next()
+        hash_index = self.hash_index(key)
+        if self.table[hash_index] != None:
+            linked_list = self.table[hash_index]
+            node = linked_list.find(HashTableEntry(key, None))
+            if node != None:
+                return node.value.value
         return None
-
 
     def resize(self, new_capacity):
         """
-        Changes the capacity of the hash table and
-        rehashes all key/value pairs.
-        Implement this.
-        """
-        # Your code here
-        prev_table = self.table
-        self.table = [None] * new_capacity
-        self.capacity = new_capacity
+            Changes the capacity of the hash table and
+            rehashes all key/value pairs.
+            Implement this.
+            """
+        old_table = self.table
+        self.table = [None] * int(new_capacity)
+        self.capacity = new_capacity 
+        self.num_elements = 0
 
-        for index in range(len(prev_table)):
-            current_node = prev_table[index]
-            while current_node != None:
-                self.put(current_node.get_key(), current_node.get_value())
-                current_node = current_node.get_next()
+        for element in old_table:
+            if element == None:
+                continue
+            curr_node = element.head
+            while curr_node != None:
+                temp = curr_node.get_next()
+                curr_node.next = None
+                hash_index = self.hash_index(curr_node.value.key)
+
+                if self.table[hash_index] != None:
+                    self.table[hash_index].insert_at_head(curr_node)
+                else:
+                    linked_list = LinkedList()
+                    linked_list.insert_at_head(curr_node)
+                    self.table[hash_index] = linked_list
+                curr_node = temp
+                self.num_elements += 1
 
 
 
@@ -232,4 +211,3 @@ if __name__ == "__main__":
         print(ht.get(f"line_{i}"))
 
     print("")
-    
