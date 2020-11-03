@@ -7,6 +7,7 @@ class HashTableEntry:
         self.value = value
         self.next = None
 
+    #functions to manage linked list
     def get_value(self):
         return self.value
 
@@ -105,25 +106,34 @@ class HashTable:
         Hash collisions should be handled with Linked List Chaining.
         Implement this.
         """
-
+        #Double capacity if load factor is over 0.7
         if self.get_load_factor() > 0.7:
             self.resize(self.capacity * 2)
 
+        #generate hash index based on key
         index = self.hash_index(key)
+        #load key and value into a HashTableEntry
         table_entry = HashTableEntry(key, value)
         self.count += 1
+        #if nothing is in the table index load the HashTableEntry generated from incoming key, value
         if self.table[index] == None:
             self.table[index] = table_entry
+        #if table already has entry
         else:
+            #extrct current node in table at occupied index
             current_node = self.table[index]
+            #walk through slots in list at table[index]
             while current_node != None:
+                #check key, if we're editing a node that already exist update the value
                 if current_node.get_key() == key:
                     current_node.set_value(value)
-                    return
+                #if the next slot is empty
                 elif current_node.get_next() == None:
+                    #load the HashTableEntry generated from incoming key into the next slot
                     current_node.set_next(table_entry)
-
+                #walk to next node
                 current_node = current_node.get_next()
+        return value
 
     def delete(self, key):
         """
@@ -131,7 +141,7 @@ class HashTable:
         Print a warning if the key is not found.
         Implement this.
         """
-        # Your code here
+
         index = self.hash_index(key)
         current_node = self.table[index]
         prev_node = None
