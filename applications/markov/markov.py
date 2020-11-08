@@ -24,6 +24,7 @@ for index, word in enumerate(word_list):
 #print(dictionary)
 
 # TODO: construct 5 random sentences
+#make an array of start and end words
 start_list = []
 end_list = []
 for word in word_list:
